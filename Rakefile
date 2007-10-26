@@ -74,6 +74,7 @@ PKG_FILES = FileList[
   'bin/**/*',
   'doc/**/*',
   'lib/**/*',
+  'example/**/*',
 ] - [ 'test' ]
 
 spec = Gem::Specification.new do |s|
