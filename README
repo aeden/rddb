@@ -6,7 +6,10 @@ DRDB is a Document-based Ruby Database. It is inspired by CouchDB and the notion
 * Views can be defined with Ruby code, mapping from a document to any other data structure, such as a String, Array or Hash.
 * A reduce block can be defined to reduce the initial mapped data from a view.
 * Views can be materialized to improve query performance.
-* Datastores are pluggable. Current implementations are RAM and partitioned files.
+* Datastores are pluggable. Current implementations are RAM, partitioned files and Amazon S3.
+* Viewstores are pluggable. Current implementations are RAM, file system and Amazon S3.
+* Materialization stores are pluggable. Current implementations are RAM, file system and Amazon S3.
+* Distributed materialization may work, but it's going to be rewritten.
 
 == Examples
 

@@ -3,6 +3,7 @@ require 'rake/testtask'
 require 'rake/rdoctask'
 require 'rake/packagetask'
 require 'rake/gempackagetask'
+require 'rake/contrib/rubyforgepublisher'
 
 require File.join(File.dirname(__FILE__), 'lib/rddb')
 
@@ -135,6 +136,22 @@ task :lines do
   end
 
   puts "Total: Lines #{total_lines}, LOC #{total_codelines}"
+end
+
+desc "Publish the release files to RubyForge."
+task :release => [ :package ] do
+  `rubyforge login`
+
+  for ext in %w( gem tgz zip )
+    release_command = "rubyforge add_release rddb #{PKG_NAME} 'REL #{PKG_VERSION}' pkg/#{PKG_NAME}-#{PKG_VERSION}.#{ext}"
+    puts release_command
+    system(release_command)
+  end
+end
+
+desc "Publish the API documentation"
+task :pdoc => [:rdoc] do 
+  Rake::SshDirPublisher.new("aeden@rubyforge.org", "/var/www/gforge-projects/rddb/", "rdoc").upload
 end
 
 desc "Reinstall the gem from a local package copy"
