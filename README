@@ -1,0 +1,176 @@
+DRDB is a Document-based Ruby Database. It is inspired by CouchDB and the notion that you insert documents into the database and then define views for querying. Views are defined as blocks which are used to select the documents and the attributes in the documents that are relevant to your needs.
+
+== Features
+
+* Documents are simply collections of name/value pairs.
+* Views can be defined with Ruby code, mapping from a document to any other data structure, such as a String, Array or Hash.
+* A reduce block can be defined to reduce the initial mapped data from a view.
+* Views can be materialized to improve query performance.
+* Datastores are pluggable. Current implementations are RAM and partitioned files.
+
+== Examples
+
+This first example creates three documents and then queries for the names in the documents.
+
+  # First create an in-memory database
+  database = Rddb::Database.new
+  
+  # Put some documents into it
+  database << {:name => 'John', :income => 35000}
+  database << {:name => 'Bob', :income => 40000}
+  database << {:name => 'Jim', :income => 37000}
+  
+  # Create a view that will return the names
+  database.create_view('names') do |document|
+    document.name
+  end
+  
+  # The result of querying will return an array of names
+  assert_equal ['John','Bob','Jim'], database.query('names')
+  
+In addition it is possible to specify a block to reduce the result set:
+
+  database.create_view('total income') do |document|
+    document.income
+  end.reduce_with do |results|
+    results.inject { |memo,value| memo + value }
+  end
+  assert_equal 112000, database.query('total income')
+  
+Here's another example, this time averaging the incomes:
+
+  database.create_view('average income') do |document|
+    document.income
+  end.reduce_with do |results|
+    results.inject { |memo,value| memo + value } / results.length
+  end
+  assert_equal 37333, database.query('average income')
+  
+You can also implement grouping:
+
+  database.create_view('total income by profession') do |document|
+    [document.profession, document.income]
+  end.reduce_with do |results|
+    returning Hash.new do |reduced|
+      results.each do |result|
+        reduced[result[0]] ||= 0
+        reduced[result[0]] += result[1]
+      end
+    end
+  end
+  
+  results = database.query('total income by profession')
+  assert_equal 77000, results['Plumber']
+  assert_equal 35000, results['Carpenter']
+  
+Here is an example of sorting:
+
+  database.create_view('sorted by income') do |document|
+    {
+      :name => document.name,
+      :income => document.income,
+      :profession => document.profession
+    }
+  end.reduce_with do |results|
+    results.sort { |a,b| a[:income] <=> b[:income] }
+  end
+  
+  assert_equal [
+    {:income=>35000, :profession=>"Carpenter", :name=>"John"},
+    {:income=>37000, :profession=>"Plumber", :name=>"Jim"},
+    {:income=>40000, :profession=>"Plumber", :name=>"Bob"}
+  ], database.query('sorted by income')
+  
+Finding distinct values:
+
+  database.create_view('distinct professions') do |document|
+    document.profession
+  end.reduce_with do |results|
+    returning Array.new do |reduced|
+      results.each do |result|
+        reduced << result unless reduced.include?(result)
+      end
+    end
+  end
+  
+  assert_equal ['Carpenter','Plumber'], database.query('distinct professions')
+  
+You can also indicate that a view is materialized by passing a block to +materialize_if+:
+
+  database.create_view('names') do |document|
+    document.name
+  end.materialize_if do |document|
+    document.attribute?(:name)
+  end
+  
+And this works with reduce as well:
+
+  database.create_view('names') do |document|
+    document.name
+  end.reduce_with do |results|
+    results.sort
+  end.materialize_if do |document|
+    document.attribute?(:name)
+  end
+  
+Materialization is actually handled by a separate thread that looks at a materialization queue. You can indicate that materialization is required with the following:
+
+  database.create_view('names') do |document|
+    document.name
+  end.reduce_with do |results|
+    results.sort
+  end.materialize_if do |document|
+    document.attribute?(:name)
+  end.require_materialization
+  
+If you specify that materialization is required then a Rddb::ViewNotYetMaterialized error will be raised if you attempt to query the view prior to materialization. Normally materialization will occur when a document is added to the database, however you can also force materialization by calling <code>database.refresh_views</code> at any time. Usually you'll want to call this method after adding a new materialized view with <code>database.create_view</code>.
+
+== Datastores
+
+There are two datastores provided with Rddb: RamDatastore and PartitionedFileDatastore. By default the RamDatastore will be used, however the partitioned file datastore should be used if you require your data to be persistent.
+
+  datastore = Rddb::Datastore::PartitionedFileDatastore.new
+  database = Rddb::Database.new(datastore)
+  
+The partitioned file datastore accepts three options:
+
+* <tt>:basedir</tt>: The base directory for data storage
+* <tt>:partition_strategy</tt>: A Proc that defines partitioning
+* <tt>:cache</tt>: Provide a cache implementation (such as a Hash) to enable caching. If not specified then caching will not be used.
+
+The :partition_strategy option can be used to provide a prefix for partitioning depending on what data is in the document. For example, if you have users then you might want to partition on the first three letters of their username:
+
+  ps = Proc.new { |document| document.username[0..2] }
+  datastore = Rddb::Datastore::PartitionedFileDatastore.new(
+    :partition_strategy => ps
+  )
+
+Whatever string is returned from the :partition_strategy Proc will be used as the partition name.
+
+The cache option can be used to implement in-memory caching of documents. You can pass any sort of Hash, including a basic Hash or a more complex cache implementation (for example an LRU cache) as long as it has the same interface as Hash.
+
+Right now the partitioned file datastore uses Marshal to dump and load data. This will most likely change in the future to something faster and more compact.
+
+== Viewstores
+
+There is one viewstore currently provided with Rddb: the FilesystemViewstore. This class will store materialized views in the file system. Each view is materialized to a file of the name name as the view.
+
+  viewstore = Rddb::Viewstore::FilesystemViewstore.new
+  database.create_view('names sorted by last name', :viewstore => viewstore) do |document|
+    {
+      :first_name => document.first_name,
+      :last_name => document.last_name
+    }
+  end.reduce_with do |results|
+    results.sort { |a,b| a[:last_name] <=> b[:last_name] }
+  end
+  
+You can specify options when constructing the viewstore.
+
+* <tt>:basedir</tt>: The base directory for storing views
+
+More viewstores will probably be forthcoming.
+
+== Gotchas
+
+Types matter. You should be sure that values which will be aggregated (for example, reduced with an inject) are inserted into the database using a numeric type. Calling inject on an array with 200,000 Strings is not a pleasant experience. ;-)

@@ -1,0 +1,11 @@
+The files in this directory are for performance testing.
+
+Data for performance testing found at:
+
+http://kdd.ics.uci.edu/
+http://www2.census.gov/census_2000/datasets/
+
+To execute the performance tests:
+
+  rake test:perf
+  

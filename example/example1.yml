@@ -1,0 +1,16 @@
+-
+  doctype: "user"
+  username: "juser"
+  first_name: "Joe"
+  last_name: "User"
+  email: "juser@example.com"
+-
+  doctype: "user"
+  username: "jdoe"
+  first_name: "John"
+  last_name: "Doe"
+  email: "jdoe@foobar.com"
+-
+  doctype: "post"
+  title: "This is a test"
+  body: "This is a test of a different type of document."
