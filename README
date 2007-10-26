@@ -177,3 +177,7 @@ More viewstores will probably be forthcoming.
 == Gotchas
 
 Types matter. You should be sure that values which will be aggregated (for example, reduced with an inject) are inserted into the database using a numeric type. Calling inject on an array with 200,000 Strings is not a pleasant experience. ;-)
+
+== RubyForge
+
+This project is hosted on RubyForge at http://rubyforge.org/projects/rddb. Instructions for accessing the Subversion repository: http://rubyforge.org/scm/?group_id=4688.

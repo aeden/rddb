@@ -1,4 +1,4 @@
-# Require this class to use RDDB.
+# Require this file to use RDDB.
 
 $:.unshift(File.dirname(__FILE__))
 
