@@ -67,7 +67,7 @@ end
 
 PKG_FILES = FileList[
   #'CHANGELOG',
-  #'LICENSE',
+  'LICENSE',
   'README',
   #'TODO',
   'Rakefile',
