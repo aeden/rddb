@@ -1,9 +1,12 @@
-module Rddb
+# Source code for the Rddb::Materializer class.
+
+module Rddb #:nodoc:
   # Materializer handles the materialization of views.
   class Materializer
     # Reader for the database
     attr_reader :database #:nodoc:
     
+    # Initialize the materializer with the given database.
     def initialize(database)
       @database = database
       @database.database_listeners << self
@@ -17,10 +20,12 @@ module Rddb
       end
     end
     
+    # Callback that is invoked when a document is added to the database.
     def document_added(document)
       update_materialization_queue(document)
     end
     
+    # Refresh all materialized views.
     def refresh_views
       database.views.each do |name,view|
         @materialization_queue << view if view.materialized?
@@ -28,6 +33,7 @@ module Rddb
     end
     
     private
+    # Accessor for the database
     def database
       @database
     end
@@ -41,6 +47,7 @@ module Rddb
       end
     end
     
+    # Accessor for the materialization queue.
     def materialization_queue
       @materialization_queue ||= Queue.new
     end
