@@ -20,6 +20,7 @@ require 'ext/object'
 
 require 'rddb/document'
 require 'rddb/database'
+require 'rddb/materializer'
 require 'rddb/document_store'
 require 'rddb/view_store'
 require 'rddb/materialization_store'

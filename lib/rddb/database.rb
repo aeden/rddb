@@ -11,15 +11,8 @@ module Rddb #:nodoc:
     # Initialize the database.
     def initialize(document_store=DocumentStore::RamDocumentStore.new)
       @document_store = document_store ||= DocumentStore::RamDocumentStore.new
-      @materialization_thread = Thread.new(@document_store.dup) do |ds|
-        while true do
-          view = materialization_queue.pop
-          logger.info "Materializing the view '#{view.name}'" if logger
-          view.materialize(ds)
-          logger.info "The view '#{view.name}' is now materialized" if logger
-        end
-      end
       @batch = false
+      @materializer = Materializer.new(self)
     end
     
     # Add a document to the database. The document may either be a Hash or
@@ -31,8 +24,8 @@ module Rddb #:nodoc:
       when Document
         document_store.store(document)
         # TODO: this may be a bottleneck, allow index updating
-        document_store.write_indexes unless @batch
-        update_materialization_queue(document)
+        document_store.write_indexes unless batch?
+        document_added(document)
         document
       else
         raise ArgumentError, "The document must be either a Hash or a Document"
@@ -46,11 +39,14 @@ module Rddb #:nodoc:
     def batch(&block)
       @batch = true
       yield
-      views.each do |name,view|
-        @materialization_queue << view if view.materialized?
-      end
+      refresh_views
       document_store.write_indexes
       @batch = false
+    end
+    
+    # Return true if the database is currently in batch write mode.
+    def batch?
+      @batch
     end
     
     # Get a document by it's ID.
@@ -79,9 +75,12 @@ module Rddb #:nodoc:
     
     # Refresh all materialized views.
     def refresh_views
-      views.each do |name,view|
-        @materialization_queue << view if view.materialized?
-      end
+      @materializer.refresh_views
+    end
+    
+    # Get named views.
+    def views
+      @views ||= {}
     end
     
     def logger #:nodoc:
@@ -92,24 +91,17 @@ module Rddb #:nodoc:
       @logger
     end
     
-    private
-    # Get named views.
-    def views
-      @views ||= {}
+    # Listeners that will be invoked when a document is added to the database.
+    # Each object in this collection should have the method 
+    # document_added(document)
+    def database_listeners
+      @database_listeners ||= []
     end
     
     private
-    # Update the materialization queue.
-    def update_materialization_queue(document)
-      unless @batch
-        views.each do |name, view|
-          materialization_queue << view if view.should_refresh?(document)
-        end
-      end
-    end
-    
-    def materialization_queue
-      @materialization_queue ||= Queue.new
+    # Method that is invoked each time a document is added.
+    def document_added(document)
+      database_listeners.each { |l| l.document_added(document) }
     end
   end
 end
