@@ -24,4 +24,5 @@ class Object #:nodoc:
       self
     end
   end
+  alias :to_options :to_sym_key_hash
 end
