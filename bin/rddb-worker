@@ -2,4 +2,42 @@
 
 require File.dirname(__FILE__) + '/../lib/rddb'
 
-Rddb::Worker.new.run
+require 'getoptlong'
+
+# Print a usage statement
+def usage #:nodoc:
+  puts "Usage: rddb-worker [-v|--version] [-h|--help] [--ec2] [--rinda]"
+end
+
+include Rddb::Binutils
+options = load_config
+
+begin
+  opts = GetoptLong.new(
+    [ '--version', '-v', GetoptLong::NO_ARGUMENT],
+    [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
+    [ '--ec2', GetoptLong::REQUIRED_ARGUMENT ],
+    [ '--rinda', GetoptLong::NO_ARGUMENT ]
+  )
+
+  opts.each do |opt, arg|
+    case opt
+    when '--version'
+      puts "RDDB version #{Rddb::VERSION::STRING}"
+      exit(0)
+    when '--help'
+      usage
+      exit(0)
+    when '--ec2'
+      options[:implementation_class] = Rddb::Worker::Ec2Worker
+      options[:bucket_name] = arg
+    when '--rinda'
+      options[:implementation_class] = Rddb::Worker::RindaWorker
+    end
+  end
+
+  worker_class = options.delete(:implementation_class) || Rddb::Worker::RindaWorker
+  worker_class.new(options).run
+rescue GetoptLong::InvalidOption
+  usage and exit(1)
+end

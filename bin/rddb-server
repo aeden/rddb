@@ -1,5 +1,10 @@
 #!/usr/bin/env ruby
 
-require File.dirname(__FILE__) + '/../lib/rddb'
+begin
+  require File.dirname(__FILE__) + '/../lib/rddb'
 
-Rddb::Server::Server.new.run
+  include Rddb::Binutils
+  options = load_config
+
+  Rddb::Server::Server.new(options).run
+end

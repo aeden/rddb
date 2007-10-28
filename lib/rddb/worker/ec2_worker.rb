@@ -6,9 +6,19 @@ module Rddb #:nodoc:
       # The queue name
       attr_reader :queue_name
       
-      # Initialize the worker with the specified queue name.
-      def initialize(queue_name)
-        @queue_name = queue_name
+      # Initialize the worker with the specified options
+      #
+      # Options:
+      # * <tt>:sqs</tt>: The SQS configuration options, including:
+      # ** <tt>:queue_name</tt>: The queue name
+      # ** <tt>:access_key_id</tt>: The access key ID
+      # ** <tt>:secret_access_key</tt>: The secret access key
+      def initialize(options={})
+        @options = options
+        @queue_name = options[:sqs][:queue_name] || 'rddb_queue'
+        
+        SQS.access_key_id = options[:sqs][:credentials][:access_key_id]
+        SQS.secret_access_key = options[:sqs][:credentials][:secret_access_key]
       end
       
       # Run the worker

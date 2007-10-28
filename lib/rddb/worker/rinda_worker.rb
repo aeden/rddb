@@ -7,6 +7,10 @@ module Rddb #:nodoc:
   module Worker #:nodoc:
     # Worker that pulls tasks from a Rinda tuple space.
     class RindaWorker
+      # Initialize with the specified options
+      def initialize(options={})
+      end
+      
       # Run the worker
       def run
         Daemons.run_proc('worker', :multiple => true, :log_output => true) do

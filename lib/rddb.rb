@@ -6,6 +6,7 @@ require 'rubygems'
 require 'uuid'
 require 'daemons'
 require 'aws/s3'
+require 'sqs'
 require 'mongrel'
 
 require 'rinda/ring'
@@ -17,6 +18,8 @@ uuid_logger.level = Logger::FATAL
 UUID.config(:logger => uuid_logger)
 
 require 'ext/object'
+
+require 'rddb/binutils'
 
 require 'rddb/document'
 require 'rddb/database'
