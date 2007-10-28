@@ -20,6 +20,7 @@ module Rddb #:nodoc:
     def <<(document)
       case document
       when Hash
+        # create a Document from the Hash and then call << again
         self << Document.new(document)
       when Document
         document_store.store(document)
