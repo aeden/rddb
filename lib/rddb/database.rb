@@ -12,7 +12,7 @@ module Rddb #:nodoc:
     def initialize(document_store=DocumentStore::RamDocumentStore.new)
       @document_store = document_store ||= DocumentStore::RamDocumentStore.new
       @batch = false
-      @materializer = Materializer.new(self)
+      @materializer = Materializer::ThreadedMaterializer.new(self)
     end
     
     # Add a document to the database. The document may either be a Hash or
