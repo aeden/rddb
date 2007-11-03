@@ -8,6 +8,9 @@ module Rddb #:nodoc:
     # The document store.
     attr_reader :document_store
     
+    # The materializer (defaults to ThreadedMaterializer)
+    attr_reader :materializer
+    
     # Initialize the database.
     #
     # Options:

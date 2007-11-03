@@ -1,6 +1,8 @@
 require File.dirname(__FILE__) + '/test_helper'
 
 class TaoMaterializedOnlyTest < Test::Unit::TestCase
+  include PerfHelpers
+  
   def test_tao_in_ram
     db = create_db_and_views
     load_database(db)
@@ -36,7 +38,7 @@ class TaoMaterializedOnlyTest < Test::Unit::TestCase
   end
   
   def create_db_and_views(ds=nil)
-    returning Rddb::Database.new(ds) do |db|
+    returning Rddb::Database.new(:document_store => ds) do |db|
       db.logger = Logger.new(STDOUT)
       db.logger.level = Logger::DEBUG
       
@@ -77,21 +79,4 @@ class TaoMaterializedOnlyTest < Test::Unit::TestCase
     puts "#{load_time} sec to load"
   end
   
-  def do_assertions(db, expects_materialized=true)
-    assert_equal 178080, db.count
-    
-    begin
-      puts "Querying: average air temp materialized"
-      query_time = Benchmark.realtime do
-        result = db.query('average air temp materialized')
-        assert_equal 23, result
-        puts "Average air temp: #{result}c"
-      end
-      puts "#{query_time} sec to query materialized view"
-    rescue Rddb::ViewNotYetMaterialized
-      puts "View is not yet materialized"
-      sleep 5
-      retry
-    end
-  end
 end

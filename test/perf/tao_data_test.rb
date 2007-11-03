@@ -77,7 +77,7 @@ class TaoDataTest < Test::Unit::TestCase
     db.logger = Logger.new(STDOUT)
     db.logger.level = Logger::DEBUG
   
-    db.create_view('average air temp', :distributed => true) do |document|
+    db.create_view('average air temp', :distributed => true) do |document, args|
       document.air_temp
     end.reduce_with do |results|
       results.inject { |memo,value| memo + value } / results.length
@@ -95,18 +95,18 @@ class TaoDataTest < Test::Unit::TestCase
   end
   
   def create_db_and_views(ds=nil, materialize=true)
-    returning Rddb::Database.new(ds) do |db|
+    returning Rddb::Database.new(:document_store => ds) do |db|
       db.logger = Logger.new(STDOUT)
       db.logger.level = Logger::DEBUG
     
-      db.create_view('average air temp') do |document|
+      db.create_view('average air temp') do |document, args|
         document.air_temp
       end.reduce_with do |results|
         results.inject { |memo,value| memo + value } / results.length
       end
       
       if materialize
-        db.create_view('average air temp materialized') do |document|
+        db.create_view('average air temp materialized') do |document, args|
           document.air_temp
         end.reduce_with do |results|
           results.inject { |memo,value| memo + value } / results.length

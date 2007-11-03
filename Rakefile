@@ -18,8 +18,11 @@ RELEASE_NAME  = "REL #{PKG_VERSION}"
 desc 'Default: run unit tests.'
 task :default => 'test:units'
 
-desc 'Test the library.'
-task :test => ['test:units','test:integration','test:perf']
+desc 'Execute the library unit tests.'
+task :test => ['test:units']
+
+desc 'Test the library'
+task :test_all => ['test:units','test:integration']
 
 namespace :test do
   desc 'Unit tests'
