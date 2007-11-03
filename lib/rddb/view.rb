@@ -16,7 +16,7 @@ module Rddb #:nodoc:
     def initialize(database, name, options={}, &block)
       @database = database
       @name = name
-      @block = block
+      @map_with = block
       
       @materialization_store = options[:materialization_store] if options[:materialization_store]
       @distributed = options[:distributed]
@@ -103,7 +103,7 @@ module Rddb #:nodoc:
       tasks = []
       document_store.each_partition do |partition|
         tasks << Worker::WorkerTask.new(
-          partition, partition, @block, name, document_store, args
+          partition, partition, @map_with, name, document_store, args
         )
       end
       
