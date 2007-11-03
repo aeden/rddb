@@ -53,6 +53,10 @@ end.reduce_with do |results|
   results.sort { |a,b| a.last_name <=> b.last_name }.collect { |document| "#{document.first_name} #{document.last_name}" }.reverse
 end
 
+db.create_view('user by name') do |document|
+  document if document.name = name
+end
+
 [
   'all users', 
   'all users with foobar.com email addresses',

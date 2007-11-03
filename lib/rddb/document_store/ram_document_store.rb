@@ -49,8 +49,7 @@ module Rddb #:nodoc:
       def dup #:nodoc:
         self
       end
-      
-      protected
+
       # The datastore options
       def options #:nodoc:
         @options

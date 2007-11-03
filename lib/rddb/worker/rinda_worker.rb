@@ -11,7 +11,22 @@ module Rddb #:nodoc:
       def initialize(options={})
       end
       
-      # Run the worker
+      # Process the specified tasks.
+      def self.process(tasks)
+        returning Array.new do |results|
+          tasks.each do |task|
+            tuple_space.write(['task', DRb.uri, task])
+          end
+          
+          tasks.each do |task|
+            puts "taking result from tuple space for partition '#{task.partition}'"
+            tuple = tuple_space.take(['result', DRb.uri, task.partition, nil])
+            results << tuple[3]
+          end
+        end
+      end
+      
+      # Run the worker service.
       def run
         Daemons.run_proc('worker', :multiple => true, :log_output => true) do
           begin
@@ -49,6 +64,18 @@ module Rddb #:nodoc:
             puts "Ring server not found, are you sure the ring server is running?"
           end
         end
+      end
+
+      # Get the tuple space for distributed processing
+      def tuple_space
+        unless @tuple_space 
+          DRb.start_service
+          ring_server = Rinda::RingFinger.primary
+
+          ts = ring_server.read([:name, :TupleSpace, nil, nil])[2]
+          @tuple_space = Rinda::TupleSpaceProxy.new ts
+        end
+        @tuple_space
       end
     end
   end

@@ -1,4 +1,4 @@
-DRDB is a Document-based Ruby Database. It is inspired by CouchDB and the notion that you insert documents into the database and then define views for querying. Views are defined as blocks which are used to select the documents and the attributes in the documents that are relevant to your needs.
+RDDB is a Ruby Document-oriented Database. It is inspired by CouchDB and the notion that you insert documents into the database and then define views for querying. Views are defined as blocks which are used to select the documents and the attributes in the documents that are relevant to your needs. Views are materialized to enhance performance.
 
 == Features
 

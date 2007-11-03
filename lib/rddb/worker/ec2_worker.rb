@@ -21,6 +21,12 @@ module Rddb #:nodoc:
         SQS.secret_access_key = options[:sqs][:credentials][:secret_access_key]
       end
       
+      def self.process(tasks)
+        tasks.each do |task|
+          # publish to SQS here
+        end
+      end
+      
       # Run the worker
       def run
         Daemons.run_proc('worker', :multiple => true, :log_output => true) do

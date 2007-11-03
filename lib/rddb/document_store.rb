@@ -2,6 +2,7 @@
 module Rddb #:nodoc:
   # Module for Rddb document storage engines.
   module DocumentStore
+    
     # Base class for document storage engines.
     class Base
       include Enumerable

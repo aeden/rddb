@@ -61,9 +61,9 @@ module Rddb #:nodoc:
     end
     
     # Query the named view
-    def query(name)
+    def query(name, args={})
       raise ArgumentError, "View '#{name}' does not exist." unless views.key?(name)
-      views[name].query(document_store)
+      views[name].query(document_store, args)
     end
     
     # Create the named view with the given filter code.

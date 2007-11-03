@@ -1,8 +1,8 @@
 # Source file containing the Rddb::View class definition
 module Rddb #:nodoc:
-  # A view on the database. Views are used to express queries. Views use Ruby blocks
-  # to process the documents in the document store and produce responses. Views can
-  # be materialized to improve performance.
+  # A view on the database. Views are used to express queries. Views use Ruby 
+  # blocks to process the documents in the document store and produce 
+  # responses. Views can be materialized to improve performance.
   class View
     # Get the name of the view.
     attr_reader :name
@@ -23,14 +23,17 @@ module Rddb #:nodoc:
     end
     
     # Query the view
-    def query(document_store) #:nodoc:
+    def query(document_store, args) #:nodoc:
       # Load the data if the view should be materialized and if the 
-      # materialized data cache is nil.
-      load_data if materialized? && materialized.nil?
+      # materialized data cache is nil. Args and materialized views
+      # are not yet supported.
+      if args.empty?
+        load_data if materialized? && materialized.nil?
       
-      if materialized
-        database.logger.info "Using materialized view"
-        return materialized
+        if materialized
+          database.logger.info "Using materialized view"
+          return materialized
+        end
       end
       
       # If materialization is required and this point is reached, it means that
@@ -38,7 +41,7 @@ module Rddb #:nodoc:
       # be caught allowing the method to be retried.
       raise ViewNotYetMaterialized if @require_materialization
       
-      do_query(document_store)
+      do_query(document_store, args)
     end
     
     # Materialize the view
@@ -89,58 +92,24 @@ module Rddb #:nodoc:
     
     protected
     # Interal query
-    def do_query(document_store)
-      results = []
+    def do_query(document_store, args={})
       # map
-      if distributed?
-        results = do_distributed_query(document_store)
-      else
-        results = do_local_query(document_store)
-      end
-      
+      results = do_map(document_store, args)
       # reduce (if necessary)
-      if @reduce_with
-        @reduce_with.call(results)
-      else
-        results
-      end
+      @reduce_with.nil? ? results : @reduce_with.call(results)
     end
     
-    def do_local_query(document_store) #:nodoc:
-      database.logger.info "Executing local view query"
-      returning Array.new do |results|
-        document_store.each_partition do |partition|
-          if document_store.supports_partitioning?
-            database.logger.debug "Reading from partition #{partition}"
-          end
-          document_store.each(partition) do |document|
-            result = @block.call(document)
-            results << result if result # nils not included in the result set
-          end
-        end
-      end
-    end
-    
-    def do_distributed_query(document_store) #:nodoc:
-      database.logger.info "Executing distributed view query"
+    def do_map(document_store, args={}) #:nodoc:
       tasks = []
       document_store.each_partition do |partition|
-        puts "distributing partition '#{partition}'"
-        tasks << WorkerTask.new(partition, partition, @block, document_store.class, document_store.options)
+        tasks << Worker::WorkerTask.new(
+          partition, partition, @block, document_store, args
+        )
       end
       
-      tasks.each do |task|
-        tuple_space.write(['task', DRb.uri, task])
-      end
-      
-      results = []
-      tasks.each do |task|
-        puts "taking result from tuple space for partition '#{task.partition}'"
-        tuple = tuple_space.take(['result', DRb.uri, task.partition, nil])
-        results << tuple[3]
-      end
-      
-      results.flatten
+      worker_class = Worker::LocalWorker
+      worker_class = Worker::RindaWorker if distributed?
+      worker_class.process(tasks)
     end
     
     # Get the database instance
@@ -160,18 +129,6 @@ module Rddb #:nodoc:
         database.logger.info("Loading data for '#{name}' from materialization store")
         @materialized = materialization_store.find(name)
       end
-    end
-    
-    # Get the tuple space for distributed processing
-    def tuple_space
-      unless @tuple_space 
-        DRb.start_service
-        ring_server = Rinda::RingFinger.primary
-
-        ts = ring_server.read([:name, :TupleSpace, nil, nil])[2]
-        @tuple_space = Rinda::TupleSpaceProxy.new ts
-      end
-      @tuple_space
     end
     
   end

@@ -21,7 +21,7 @@ class DatabaseTest < Test::Unit::TestCase
   
   def test_batch
     database = Rddb::Database.new
-    database.create_view('SELECT ALL') do |document|
+    database.create_view('SELECT ALL') do |document, args|
       document
     end
     assert_nothing_raised do
@@ -33,7 +33,7 @@ class DatabaseTest < Test::Unit::TestCase
   
   def test_refresh_views
     database = Rddb::Database.new
-    database.create_view('SELECT ALL') do |document|
+    database.create_view('SELECT ALL') do |document, args|
       document
     end
     assert_nothing_raised do
@@ -50,7 +50,7 @@ class DatabaseTest < Test::Unit::TestCase
   
   def test_simple_map_view
     database = create_database
-    database.create_view('names') do |document|
+    database.create_view('names') do |document, args|
       document.name
     end
     assert_equal ['Bob','Jim','John'], database.query('names').sort
@@ -58,7 +58,7 @@ class DatabaseTest < Test::Unit::TestCase
   
   def test_map_reduce_view_to_sum
     database = create_database
-    database.create_view('total income') do |document|
+    database.create_view('total income') do |document, args|
       document.income
     end.reduce_with do |results|
       results.inject { |memo,value| memo + value }
@@ -68,7 +68,7 @@ class DatabaseTest < Test::Unit::TestCase
   
   def test_map_reduce_view_to_average
     database = create_database
-    database.create_view('average income') do |document|
+    database.create_view('average income') do |document, args|
       document.income
     end.reduce_with do |results|
       results.inject { |memo,value| memo + value } / results.length
@@ -79,7 +79,7 @@ class DatabaseTest < Test::Unit::TestCase
   def test_map_reduce_view_with_grouping
     database = create_database
    
-    database.create_view('total income by profession') do |document|
+    database.create_view('total income by profession') do |document, args|
       [document.profession, document.income]
     end.reduce_with do |results|
       returning Hash.new do |reduced|
@@ -98,7 +98,7 @@ class DatabaseTest < Test::Unit::TestCase
   def test_map_reduce_view_average_with_grouping
     database = create_database
    
-    database.create_view('average income by profession') do |document|
+    database.create_view('average income by profession') do |document, args|
       [document.profession, document.income]
     end.reduce_with do |results|
       reduced = {}
@@ -122,7 +122,7 @@ class DatabaseTest < Test::Unit::TestCase
   def test_ordered
     database = create_database
     
-    database.create_view('sorted by income') do |document|
+    database.create_view('sorted by income') do |document, args|
       {
         :name => document.name,
         :income => document.income,
@@ -143,7 +143,7 @@ class DatabaseTest < Test::Unit::TestCase
   def test_distinct_ordering
     database = create_database
     
-    database.create_view('distinct professions in descending order') do |document|
+    database.create_view('distinct professions in descending order') do |document, args|
       document.profession
     end.reduce_with do |results|
       reduced = []
@@ -162,7 +162,7 @@ class DatabaseTest < Test::Unit::TestCase
     database.logger = Logger.new('test.log')
     database.logger.level = Logger::INFO
     
-    database.create_view('names') do |document|
+    database.create_view('names') do |document, args|
       document.name
     end.materialize_if do |document|
       document.attribute?(:name)
@@ -176,7 +176,7 @@ class DatabaseTest < Test::Unit::TestCase
     database.logger = Logger.new('test.log')
     database.logger.level = Logger::INFO
     
-    database.create_view('names') do |document|
+    database.create_view('names') do |document, args|
       document.name
     end.reduce_with do |results|
       results.sort
@@ -193,7 +193,7 @@ class DatabaseTest < Test::Unit::TestCase
       :date => Date.parse('2007/03/20')
     }
     
-    database.create_view('sorted by income') do |document|
+    database.create_view('sorted by income') do |document, args|
       {
         :name => document.name,
         :income => document.income,
@@ -218,6 +218,16 @@ class DatabaseTest < Test::Unit::TestCase
       {:income=>38000, :profession=>"Trim Carpenter", :name=>"John", :date => '2007-03-20'},
       {:income=>40000, :profession=>"Plumber", :name=>"Bob", :date => "2006-11-02"}
     ], results
+  end
+  
+  def test_view_with_args
+    database = create_database
+    database.create_view('user by profession') do |document, args|
+      document.profession == args[:profession] ? document : nil
+    end
+    assert_equal 2, database.query('user by profession', :profession => 'Plumber').length
+    assert_equal 1, database.query('user by profession', :profession => 'Carpenter').length
+    assert_equal 0, database.query('user by profession', :profession => 'Surfer').length
   end
   
   protected

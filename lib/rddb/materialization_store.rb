@@ -1,6 +1,7 @@
 module Rddb #:nodoc:
   # Module for materialization storage engines.
   module MaterializationStore
+    
     # Base class for materialization stores. Materialization stores are used to
     # store materialized views.
     class Base
