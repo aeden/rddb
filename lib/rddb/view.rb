@@ -25,10 +25,10 @@ module Rddb #:nodoc:
     # Query the view
     def query(document_store, args) #:nodoc:
       # Load the data if the view should be materialized and if the 
-      # materialized data cache is nil. Args and materialized views
-      # are not yet supported.
+      # materialized data cache is nil. 
+      # TODO: Args and materialized views are not yet supported.
       if args.empty?
-        load_data if materialized? && materialized.nil?
+        load_materialization if materialized? && materialized.nil?
       
         if materialized
           database.logger.info "Using materialized view"
@@ -124,7 +124,7 @@ module Rddb #:nodoc:
     
     private
     # Load the materialized data
-    def load_data
+    def load_materialization
       if materialization_store.exists?(name)
         database.logger.info("Loading data for '#{name}' from materialization store")
         @materialized = materialization_store.find(name)
