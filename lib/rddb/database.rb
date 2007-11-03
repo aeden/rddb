@@ -9,10 +9,15 @@ module Rddb #:nodoc:
     attr_reader :document_store
     
     # Initialize the database.
-    def initialize(document_store=DocumentStore::RamDocumentStore.new)
-      @document_store = document_store ||= DocumentStore::RamDocumentStore.new
+    #
+    # Options:
+    # * <tt>:document_store</tt>: A DocumentStore instance
+    # * <tt>:materializer_class</tt>: The Materializer class 
+    def initialize(options={})
+      @document_store = options[:document_store] || DocumentStore::RamDocumentStore.new
+      @materializer = (options[:materializer_class] || Materializer::ThreadedMaterializer).new(self)
       @batch = false
-      @materializer = Materializer::ThreadedMaterializer.new(self)
+      database_listeners << @materializer
     end
     
     # Add a document to the database. The document may either be a Hash or
@@ -84,6 +89,8 @@ module Rddb #:nodoc:
       @views ||= {}
     end
     
+    # Make sure the logger is instantiated. This method is nodoc'd because the 
+    # attr_accessor :logger is defined in this class.
     def logger #:nodoc:
       unless @logger
         @logger = Logger.new(STDOUT)

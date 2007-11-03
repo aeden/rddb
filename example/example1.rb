@@ -9,7 +9,7 @@ data = YAML.load(File.new(File.dirname(__FILE__) + '/example1.yml'))
 db = Rddb::Database.new
 data.each { |o| db << o }
 
-db.create_view('all users') do |document|
+db.create_view('all users') do |document, args|
   if document.doctype == "user"
     {
       :name => "#{document.first_name} #{document.last_name}",
@@ -18,7 +18,7 @@ db.create_view('all users') do |document|
   end
 end
 
-db.create_view('all users with foobar.com email addresses') do |document|
+db.create_view('all users with foobar.com email addresses') do |document, args|
   if document.doctype == "user" && document.email =~ /\@foobar.com$/
     {
       :name => "#{document.first_name} #{document.last_name}",
@@ -27,7 +27,7 @@ db.create_view('all users with foobar.com email addresses') do |document|
   end
 end
 
-db.create_view('user count') do |document|
+db.create_view('user count') do |document, args|
   if document.doctype == 'user'
     document
   end
@@ -35,25 +35,25 @@ end.reduce_with do |results|
   results.length
 end
 
-db.create_view('all documents count') do |document|
+db.create_view('all documents count') do |document, args|
   document
 end.reduce_with do |results|
   results.length
 end
 
-db.create_view('names sorted by last name') do |document|
+db.create_view('names sorted by last name') do |document, args|
   document if document.doctype == "user"
 end.reduce_with do |results|
   results.sort { |a,b| a.last_name <=> b.last_name }.collect { |document| "#{document.first_name} #{document.last_name}" }
 end
 
-db.create_view('names sorted by last name descending') do |document|
+db.create_view('names sorted by last name descending') do |document, args|
   document if document.doctype == "user"
 end.reduce_with do |results|
   results.sort { |a,b| a.last_name <=> b.last_name }.collect { |document| "#{document.first_name} #{document.last_name}" }.reverse
 end
 
-db.create_view('user by name') do |document|
+db.create_view('user by name') do |document, args|
   document if document.name = name
 end
 

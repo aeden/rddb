@@ -1,1 +1,5 @@
 To execute the integration tests you must copy s3_config.example.rb to s3_config.rb and set the :access_key_id and :secret_access_key to your Amazon access keys.
+
+You must also run the bin/rddb_server with
+
+  bin/rddb_server run

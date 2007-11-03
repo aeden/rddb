@@ -7,7 +7,6 @@ module Rddb
       # Initialize the materializer with the given database.
       def initialize(database)
         @database = database
-        @database.database_listeners << self
         @materialization_thread = Thread.new(database.document_store.dup) do |ds|
           while true do
             view = materialization_queue.pop
@@ -34,6 +33,11 @@ module Rddb
       # Accessor for the database
       def database
         @database
+      end
+      
+      # Accessor for the logger
+      def logger
+        database.logger
       end
     
       # Update the materialization queue.

@@ -15,7 +15,7 @@ RDDB is a Ruby Document-oriented Database. It is inspired by CouchDB and the not
 
 This first example creates three documents and then queries for the names in the documents.
 
-  # First create an in-memory database
+  # First create an database object
   database = Rddb::Database.new
   
   # Put some documents into it
@@ -24,7 +24,7 @@ This first example creates three documents and then queries for the names in the
   database << {:name => 'Jim', :income => 37000}
   
   # Create a view that will return the names
-  database.create_view('names') do |document|
+  database.create_view('names') do |document, args|
     document.name
   end
   
@@ -33,7 +33,7 @@ This first example creates three documents and then queries for the names in the
   
 In addition it is possible to specify a block to reduce the result set:
 
-  database.create_view('total income') do |document|
+  database.create_view('total income') do |document, args|
     document.income
   end.reduce_with do |results|
     results.inject { |memo,value| memo + value }
@@ -42,7 +42,7 @@ In addition it is possible to specify a block to reduce the result set:
   
 Here's another example, this time averaging the incomes:
 
-  database.create_view('average income') do |document|
+  database.create_view('average income') do |document, args|
     document.income
   end.reduce_with do |results|
     results.inject { |memo,value| memo + value } / results.length
@@ -51,7 +51,7 @@ Here's another example, this time averaging the incomes:
   
 You can also implement grouping:
 
-  database.create_view('total income by profession') do |document|
+  database.create_view('total income by profession') do |document, args|
     [document.profession, document.income]
   end.reduce_with do |results|
     returning Hash.new do |reduced|
@@ -68,7 +68,7 @@ You can also implement grouping:
   
 Here is an example of sorting:
 
-  database.create_view('sorted by income') do |document|
+  database.create_view('sorted by income') do |document, args|
     {
       :name => document.name,
       :income => document.income,
@@ -86,7 +86,7 @@ Here is an example of sorting:
   
 Finding distinct values:
 
-  database.create_view('distinct professions') do |document|
+  database.create_view('distinct professions') do |document, args|
     document.profession
   end.reduce_with do |results|
     returning Array.new do |reduced|
@@ -100,7 +100,7 @@ Finding distinct values:
   
 You can also indicate that a view is materialized by passing a block to +materialize_if+:
 
-  database.create_view('names') do |document|
+  database.create_view('names') do |document, args|
     document.name
   end.materialize_if do |document|
     document.attribute?(:name)
@@ -108,7 +108,7 @@ You can also indicate that a view is materialized by passing a block to +materia
   
 And this works with reduce as well:
 
-  database.create_view('names') do |document|
+  database.create_view('names') do |document, args|
     document.name
   end.reduce_with do |results|
     results.sort
@@ -116,9 +116,9 @@ And this works with reduce as well:
     document.attribute?(:name)
   end
   
-Materialization is actually handled by a separate thread that looks at a materialization queue. You can indicate that materialization is required with the following:
+You can indicate that materialization is required with the following:
 
-  database.create_view('names') do |document|
+  database.create_view('names') do |document, args|
     document.name
   end.reduce_with do |results|
     results.sort
@@ -126,25 +126,27 @@ Materialization is actually handled by a separate thread that looks at a materia
     document.attribute?(:name)
   end.require_materialization
   
-If you specify that materialization is required then a Rddb::ViewNotYetMaterialized error will be raised if you attempt to query the view prior to materialization. Normally materialization will occur when a document is added to the database, however you can also force materialization by calling <code>database.refresh_views</code> at any time. Usually you'll want to call this method after adding a new materialized view with <code>database.create_view</code>.
+Since materialization can be a threaded or distributed process it may be a non-blocking operation. Therefore, if you specify that materialization is required then a Rddb::ViewNotYetMaterialized error will be raised if you attempt to query the view prior to completion of materialization. Normally materialization will occur when a document is added to the database, however you can also force materialization by calling <code>database.refresh_views</code> at any time. Usually you'll want to call this method after adding a new materialized view with <code>database.create_view</code>.
 
-== Datastores
+== Document Stores
 
-There are two datastores provided with Rddb: RamDatastore and PartitionedFileDatastore. By default the RamDatastore will be used, however the partitioned file datastore should be used if you require your data to be persistent.
+There are three document stores provided with Rddb: RamDocumentStore, PartitionedFileDocumentStore and S3DocumentStore. By default the RamDocumentStore will be used, however either the partitioned file document store or the S3 document store should be used if you require your data to be persistent. The following example shows how to use the PartitionedFileDocumentStore
 
-  datastore = Rddb::Datastore::PartitionedFileDatastore.new
-  database = Rddb::Database.new(datastore)
+  document_store = Rddb::DocumentStore::PartitionedFileDocumentStore
+  database = Rddb::Database.new(:document_store = document_store)
   
-The partitioned file datastore accepts three options:
+The partitioned file document store accepts three options:
 
 * <tt>:basedir</tt>: The base directory for data storage
 * <tt>:partition_strategy</tt>: A Proc that defines partitioning
 * <tt>:cache</tt>: Provide a cache implementation (such as a Hash) to enable caching. If not specified then caching will not be used.
 
+The S3 document store accepts the same arguments as above.
+
 The :partition_strategy option can be used to provide a prefix for partitioning depending on what data is in the document. For example, if you have users then you might want to partition on the first three letters of their username:
 
   ps = Proc.new { |document| document.username[0..2] }
-  datastore = Rddb::Datastore::PartitionedFileDatastore.new(
+  document_store = Rddb::DocumentStore::PartitionedFileDatastore.new(
     :partition_strategy => ps
   )
 
@@ -152,27 +154,29 @@ Whatever string is returned from the :partition_strategy Proc will be used as th
 
 The cache option can be used to implement in-memory caching of documents. You can pass any sort of Hash, including a basic Hash or a more complex cache implementation (for example an LRU cache) as long as it has the same interface as Hash.
 
-Right now the partitioned file datastore uses Marshal to dump and load data. This will most likely change in the future to something faster and more compact.
+Right now the partitioned file document store and S3 both use Marshal to dump and load data. This will most likely change in the future to something faster and more compact.
 
-== Viewstores
+== Materialization Stores
 
-There is one viewstore currently provided with Rddb: the FilesystemViewstore. This class will store materialized views in the file system. Each view is materialized to a file of the name name as the view.
+There are three materialization stores currently provided with Rddb: RamMaterializationStore,  FilesystemMaterializationStore and S3MaterializationStore.
 
-  viewstore = Rddb::Viewstore::FilesystemViewstore.new
-  database.create_view('names sorted by last name', :viewstore => viewstore) do |document|
+In both the FilesystemMaterializationStore and the S3MaterializationStore the view will be materialized to the storage system so that queries can be answered very quickly without recalculating the view. The following example shows the file system version:
+
+  m_store = Rddb::MaterializationStore::FilesystemMaterializationStore.new
+  database.create_view('names sorted by last name', :materialization_store => m_store) do |document, args|
     {
       :first_name => document.first_name,
       :last_name => document.last_name
     }
   end.reduce_with do |results|
     results.sort { |a,b| a[:last_name] <=> b[:last_name] }
+  end.materialize_if do |document|
+    true
   end
   
-You can specify options when constructing the viewstore.
+== REST Interface
 
-* <tt>:basedir</tt>: The base directory for storing views
-
-More viewstores will probably be forthcoming.
+== Workers
 
 == Gotchas
 

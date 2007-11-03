@@ -1,5 +1,7 @@
-module Rddb
-  module Binutils
+module Rddb #:nodoc:
+  # Module for utilities used by the RDDB binaries. Not for external 
+  # consumption.
+  module Binutils #:nodoc:
     # Load the configuration from ENV['HOME']/.rddb
     def load_config
       search_paths = []

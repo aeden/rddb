@@ -50,7 +50,9 @@ Rake::RDocTask.new(:rdoc) do |rdoc|
   rdoc.title    = 'Document-based Ruby Database'
   rdoc.options << '--line-numbers' << '--inline-source'
   rdoc.rdoc_files.include('README')
-  rdoc.rdoc_files.include('lib/**/*.rb')
+  rdoc.rdoc_files.include('LICENSE')
+  rdoc.rdoc_files.include('lib/rddb.rb')
+  rdoc.rdoc_files.include('lib/rddb/**/*.rb')
 end
 
 namespace :rcov do

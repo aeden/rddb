@@ -24,9 +24,9 @@ class S3MaterializationStoreTest < Test::Unit::TestCase
     database << {:name => 'Joe'}
     database << {:name => 'Jim'}
     
-    view = Rddb::View.new(database, name) do |document|
+    view = Rddb::View.new(database, name) do |document, args|
       document.name
-    end.materialize_if do
+    end.materialize_if do |document|
       true
     end
     

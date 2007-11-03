@@ -9,10 +9,12 @@ module Rddb #:nodoc:
       # Initialize the worker with the specified options
       #
       # Options:
-      # * <tt>:sqs</tt>: The SQS configuration options, including:
-      # ** <tt>:queue_name</tt>: The queue name
-      # ** <tt>:access_key_id</tt>: The access key ID
-      # ** <tt>:secret_access_key</tt>: The secret access key
+      # * <tt>:sqs</tt>: The SQS configuration options
+      #
+      # :sqs options:
+      # * <tt>:queue_name</tt>: The queue name
+      # * <tt>:access_key_id</tt>: The access key ID
+      # * <tt>:secret_access_key</tt>: The secret access key
       def initialize(options={})
         @options = options
         @queue_name = options[:sqs][:queue_name] || 'rddb_queue'
@@ -29,7 +31,7 @@ module Rddb #:nodoc:
         end
       end
       
-      # Run the worker
+      # Run the worker service
       def run
         Daemons.run_proc('worker', :multiple => true, :log_output => true) do
           q = Ec2Worker.queue
