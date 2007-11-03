@@ -103,7 +103,7 @@ module Rddb #:nodoc:
       tasks = []
       document_store.each_partition do |partition|
         tasks << Worker::WorkerTask.new(
-          partition, partition, @block, document_store, args
+          partition, partition, @block, name, document_store, args
         )
       end
       

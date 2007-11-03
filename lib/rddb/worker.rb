@@ -7,13 +7,14 @@ module Rddb #:nodoc:
   # Module that contains worker classes for various view materializers.
   module Worker 
     class WorkerTask #:nodoc:
-      attr_reader :task_id, :partition, :process, :document_store, :args
+      attr_reader :task_id, :partition, :process, :view_name, :document_store, :args
 
       # Initialize the worker task.
-      def initialize(task_id, partition, process, document_store, args={})
+      def initialize(task_id, partition, process, view_name, document_store, args={})
         @task_id = task_id
         @partition = partition
         @process = process
+        @view_name = view_name
         @document_store = document_store
         @args = args
       end
