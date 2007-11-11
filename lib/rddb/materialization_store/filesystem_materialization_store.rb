@@ -42,7 +42,6 @@ module Rddb #:nodoc:
         File.exist?(File.join(basedir, name))
       end
       
-      protected
       # The viewstore options
       def options #:nodoc:
         @options

@@ -1,6 +1,16 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class FilesystemMaterializationStoreTest < Test::Unit::TestCase
+  
+  def test_initialize
+    options = {:basedir => File.dirname(__FILE__) + '/../tmp/materializations'}
+    materialization_store = Rddb::MaterializationStore::FilesystemMaterializationStore.new(options)
+    assert_equal(options, materialization_store.options)
+    
+    materialization_store = Rddb::MaterializationStore::FilesystemMaterializationStore.new
+    assert_equal({:basedir => 'materializations'}, materialization_store.options)
+  end
+  
   def test_store_and_find
     view, database = create_view_and_database
     view.materialize(database.document_store)

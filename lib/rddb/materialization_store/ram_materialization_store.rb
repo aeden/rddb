@@ -29,8 +29,7 @@ module Rddb #:nodoc:
       def exists?(name)
         materialized_views.key?(name)
       end
-      
-      protected
+
       # The viewstore options
       def options #:nodoc:
         @options

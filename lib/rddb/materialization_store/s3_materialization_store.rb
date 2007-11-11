@@ -46,7 +46,6 @@ module Rddb #:nodoc:
         S3Object.exists?(File.join(basedir, name), bucket_name)
       end
       
-      protected
       # The viewstore options
       def options #:nodoc:
         @options

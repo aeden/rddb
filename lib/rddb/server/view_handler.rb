@@ -74,8 +74,16 @@ module Rddb #:nodoc:
       # exist and is created.
       def put(request, response)
         view_name = request.path[0..-1]
-        view_body = request.body.read
         begin
+          if view_name.empty?
+            response.start(403) do |head, out|
+              out.write("The root path is not allowed.\n")
+              return
+            end
+          end
+          
+          view_body = request.body.read
+          
           if view_store.exists?(view_name)
             view_store.store(view_name, view_body)
             response.start(200) do |head, out|
