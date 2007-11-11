@@ -23,7 +23,7 @@ module Rddb #:nodoc:
       
       # Store the view.
       def store(name, view_code)
-        File.open(File.join(basedir, view.name), 'w') do |f|
+        File.open(File.join(basedir, name), 'w') do |f|
           f << view_code
         end
       end
@@ -38,7 +38,6 @@ module Rddb #:nodoc:
         File.exist?(File.join(basedir, name))
       end
       
-      protected
       # The viewstore options
       def options #:nodoc:
         @options

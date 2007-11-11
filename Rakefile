@@ -64,7 +64,7 @@ namespace :rcov do
     task :unit do
       rm_f 'coverage.data'
       mkdir 'coverage' unless File.exist?('coverage')
-      rcov = "rcov --aggregate coverage.data --text-summary -Ilib"
+      rcov = "rcov --aggregate coverage.data --text-summary --text-report --no-html -Ilib"
       system("#{rcov} test/unit/*_test.rb")
       #system("open coverage/index.html") if PLATFORM['darwin']
     end

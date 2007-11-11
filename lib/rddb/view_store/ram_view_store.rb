@@ -28,7 +28,6 @@ module Rddb #:nodoc:
         views.key?(name)
       end
       
-      protected
       # The viewstore options
       def options #:nodoc:
         @options
