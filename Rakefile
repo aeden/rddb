@@ -21,9 +21,6 @@ task :default => 'test:units'
 desc 'Execute the library unit tests.'
 task :test => ['test:units']
 
-desc 'Test the library'
-task :test_all => ['test:units','test:integration']
-
 namespace :test do
   desc 'Unit tests'
   Rake::TestTask.new(:units) do |t|
@@ -52,6 +49,9 @@ namespace :test do
     t.pattern = 'test/perf/**/*_test.rb'
     t.verbose = true
   end
+  
+  desc 'Run all tests'
+  task :all => ['test:units','test:s3units','test:integration']
 end
 
 desc 'Generate documentation for the library.'
