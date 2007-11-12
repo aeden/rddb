@@ -79,13 +79,12 @@ module Rddb #:nodoc:
       views[name].query(document_store, args)
     end
     
-    # Create the named view with the given filter code.
-    # Returns the newly created view object.
+    # Create the named view and returns the newly created view object.
+    # Note: views created in this fashion will not be persistent since
+    # procs cannot be serialized.
     def create_view(name, options={}, &block)
-      # TODO: implement persistent views using ViewStore.
       returning View.new(self, name, options, &block) do |view|
         views[name] = view
-        view_store.store(name, view)
       end
     end
     
