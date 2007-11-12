@@ -9,6 +9,7 @@ module Rddb #:nodoc:
       # Initialized the view store with the given options.
       #
       # Options:
+      # * <tt>:s3</tt>: The S3 configuration
       # * <tt>:basedir</tt>: The base directory
       def initialize(bucket_name, options={})
         AWS::S3::Base.establish_connection!(options[:s3])
@@ -46,6 +47,23 @@ module Rddb #:nodoc:
       # Return true if the view exists in storage.
       def exists?(name)
         S3Object.exists?(File.join(basedir, name), bucket_name)
+      end
+      
+      # Return each view in the viewstore
+      def each(&block)
+        Bucket.find(bucket_name).each do |o|
+          yield o.value
+        end
+      end
+      
+      # List all of the views in the viewstore
+      def list
+        Bucket.find(bucket_name).collect { |o| o.key.gsub(/#{basedir}\//, '') }
+      end
+      
+      # Delete all views in the viewstore
+      def delete_all #:nodoc
+        Bucket.find(bucket_name).delete_all
       end
       
       protected

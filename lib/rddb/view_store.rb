@@ -4,6 +4,8 @@ module Rddb #:nodoc:
   module ViewStore
     # Base class for view stores.
     class Base
+      include Enumerable
+      
       # Find the view.
       def find(name)
         raise_abstract_error('find')
@@ -22,6 +24,16 @@ module Rddb #:nodoc:
       # Return true if the view exists in storage.
       def exists?(name)
         raise_abstract_error('exists?')
+      end
+      
+      # Return each view in the viewstore
+      def each(&block)
+        raise_abstract_error('each')
+      end
+      
+      # List all of the views in the viewstore
+      def list
+        raise_abstract_error('list')
       end
       
       private

@@ -38,6 +38,26 @@ module Rddb #:nodoc:
         File.exist?(File.join(basedir, name))
       end
       
+      # Return each view in the viewstore
+      def each(&block)
+        Dir.entries(basedir).each do |filename|
+          if File.file?(File.join(basedir, filename))
+            yield find(filename)
+          end
+        end
+      end
+      
+      # List all of the views in the viewstore
+      def list
+        returning Array.new do |names|
+          Dir.entries(basedir).each do |filename|
+            if File.file?(File.join(basedir, filename))
+              names << filename
+            end
+          end
+        end
+      end
+      
       # The viewstore options
       def options #:nodoc:
         @options

@@ -8,6 +8,9 @@ module Rddb #:nodoc:
     # The document store.
     attr_reader :document_store
     
+    # The view store.
+    attr_reader :view_store
+    
     # The materializer (defaults to ThreadedMaterializer)
     attr_reader :materializer
     
@@ -15,9 +18,11 @@ module Rddb #:nodoc:
     #
     # Options:
     # * <tt>:document_store</tt>: A DocumentStore instance
+    # * <tt>:view_store</tt>: A ViewStore instance
     # * <tt>:materializer_class</tt>: The Materializer class 
     def initialize(options={})
       @document_store = options[:document_store] || DocumentStore::RamDocumentStore.new
+      @view_store = options[:view_store] || ViewStore::RamViewStore.new
       @materializer = (options[:materializer_class] || Materializer::ThreadedMaterializer).new(self)
       @batch = false
       database_listeners << @materializer
@@ -77,8 +82,10 @@ module Rddb #:nodoc:
     # Create the named view with the given filter code.
     # Returns the newly created view object.
     def create_view(name, options={}, &block)
+      # TODO: implement persistent views using ViewStore.
       returning View.new(self, name, options, &block) do |view|
         views[name] = view
+        view_store.store(name, view)
       end
     end
     
@@ -89,7 +96,7 @@ module Rddb #:nodoc:
     
     # Get named views.
     def views
-      @views ||= {}
+      @views ||= load_views
     end
     
     # Make sure the logger is instantiated. This method is nodoc'd because the 
@@ -113,6 +120,15 @@ module Rddb #:nodoc:
     # Method that is invoked each time a document is added.
     def document_added(document)
       database_listeners.each { |l| l.document_added(document) }
+    end
+    
+    # Load all views from the view store
+    def load_views
+      returning Hash.new do |views|
+        view_store.list.each do |name| 
+          views[name] = view_store.find(name)
+        end
+      end
     end
   end
 end

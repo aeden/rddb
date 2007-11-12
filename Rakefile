@@ -32,6 +32,13 @@ namespace :test do
     t.verbose = true
   end
   
+  desc 'S3 unit tests'
+  Rake::TestTask.new(:s3units) do |t|
+    t.libs << 'lib'
+    t.pattern = 'test/s3unit/**/*_test.rb'
+    t.verbose = true
+  end
+  
   desc 'Integration tests'
   Rake::TestTask.new(:integration) do |t|
     t.libs << 'lib'

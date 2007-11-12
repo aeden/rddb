@@ -28,6 +28,18 @@ module Rddb #:nodoc:
         views.key?(name)
       end
       
+      # Return each view in the viewstore
+      def each(&block)
+        views.each do |name, view|
+          yield view
+        end
+      end
+      
+      # List all of the views in the viewstore
+      def list
+        views.collect { |pair| pair.first }
+      end
+      
       # The viewstore options
       def options #:nodoc:
         @options
