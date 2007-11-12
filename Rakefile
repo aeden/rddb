@@ -37,9 +37,9 @@ namespace :test do
   end
   
   desc 'Integration tests'
-  Rake::TestTask.new(:integration) do |t|
+  Rake::TestTask.new(:rest) do |t|
     t.libs << 'lib'
-    t.pattern = 'test/integration/**/*_test.rb'
+    t.pattern = 'test/rest/**/*_test.rb'
     t.verbose = true
   end
   
@@ -51,7 +51,7 @@ namespace :test do
   end
   
   desc 'Run all tests'
-  task :all => ['test:units','test:s3units','test:integration']
+  task :all => ['test:units','test:s3units','test:rest']
 end
 
 desc 'Generate documentation for the library.'
