@@ -9,7 +9,6 @@ class FilesystemDatabaseTest < Test::Unit::TestCase
     database.create_view('test', :materialization_store => materialization_store) do |document, args|
       document.name
     end
-    database.read_views 'views.rb'
     
     database << {:name => 'Bob'}
     database << {:name => 'Jim'}
