@@ -40,10 +40,12 @@ module Rddb #:nodoc:
         p = partition_for(document)
         index[id] = {:partition => p}
         f = open_write(p)
-        f.seek(0, IO::SEEK_END)
-        index[id][:offset] = f.pos
-        Marshal.dump(document, f)
-        index[id][:length] = f.pos - index[id][:offset]
+        lock(p) do
+          f.seek(0, IO::SEEK_END)
+          index[id][:offset] = f.pos
+          Marshal.dump(document, f)
+          index[id][:length] = f.pos - index[id][:offset]
+        end
         cache[id] = document if cache?
         document
       end
@@ -60,9 +62,12 @@ module Rddb #:nodoc:
       
       # Trigger indexes to be stored if necessary.
       def write_indexes
-        File.open(File.join(basedir, 'index'), 'w') do |f|
+        index_file = File.new(File.join(basedir, 'index'))
+        index_file.flock(File::LOCK_EX)
+        File.open(index_file.path, 'w') do |f|
           Marshal.dump(index, f)
         end
+        index_file.flock(File::LOCK_UN)
       end
       
       # The number of documents in the datastore
@@ -139,12 +144,23 @@ module Rddb #:nodoc:
         f
       end
       
+      # Get the partition name for the specified document. If no partition 
+      # strategy is defined then the partition name will be 'default'
       def partition_for(document)
         if options[:partition_strategy]
           options[:partition_strategy].call(document)
         else
           'default'
         end
+      end
+      
+      # Acquire a write lock on the specified partition and then yield to
+      # the block. Upon completion of the block release the lock.
+      def lock(partition, &block)
+        f = File.new(File.join(basedir, partition))
+        f.flock(File::LOCK_EX)
+        yield
+        f.flock(File::LOCK_UN)
       end
       
       def index
