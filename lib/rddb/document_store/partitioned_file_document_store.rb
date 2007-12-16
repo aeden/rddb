@@ -5,6 +5,7 @@ module Rddb #:nodoc:
   module DocumentStore #:nodoc:
     # DocumentStore implementation that stores documents in partitioned files.
     class PartitionedFileDocumentStore < Base
+      include Cacheable
       # Initialize the datastore.
       #
       # Options:
@@ -176,16 +177,6 @@ module Rddb #:nodoc:
             #puts "index loaded with #{@index.length} items"
           end
         end
-      end
-      
-      # Return true if caching is enabled.
-      def cache?
-        !options[:cache].nil?
-      end
-      
-      # Get the cache
-      def cache
-        @cache ||= options[:cache].new
       end
     end
   end

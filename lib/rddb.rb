@@ -20,6 +20,7 @@ UUID.config(:logger => uuid_logger)
 require 'ext/object'
 
 require 'rddb/binutils'
+require 'rddb/cacheable'
 
 require 'rddb/document'
 require 'rddb/database'

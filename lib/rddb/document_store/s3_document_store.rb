@@ -5,6 +5,7 @@ module Rddb #:nodoc:
     class S3DocumentStore < Base
       include AWS::S3
       include Enumerable
+      include Cacheable
       
       # Initialize the datastore.
       #
@@ -153,15 +154,6 @@ module Rddb #:nodoc:
         end
       end
       
-      # Return true if caching is enabled.
-      def cache?
-        !options[:cache].nil?
-      end
-      
-      # Get the cache
-      def cache
-        @cache ||= options[:cache].new
-      end
     end
   end
 end
