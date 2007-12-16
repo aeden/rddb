@@ -133,7 +133,7 @@ Since materialization can be a threaded or distributed process it may be a non-b
 There are three document stores provided with Rddb: RamDocumentStore, PartitionedFileDocumentStore and S3DocumentStore. By default the RamDocumentStore will be used, however either the partitioned file document store or the S3 document store should be used if you require your data to be persistent. The following example shows how to use the PartitionedFileDocumentStore
 
   document_store = Rddb::DocumentStore::PartitionedFileDocumentStore
-  database = Rddb::Database.new(:document_store = document_store)
+  database = Rddb::Database.new(:document_store => document_store)
   
 The partitioned file document store accepts three options:
 
